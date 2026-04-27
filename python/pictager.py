@@ -7,6 +7,7 @@ import json
 import sys
 from pathlib import Path
 from datetime import datetime
+import time
 
 def extract_metadata_from_image(image_location: str):
     """Retrieve camera metadata: Capture Date and Lens Focal Length"""
@@ -101,13 +102,23 @@ Be as descriptive as possible, but only refers well identified objects."""
     print(f"Keywords        : {', '.join(analysis_result['keywords'])}")
     print(f"Capture Date    : {analysis_result['capture_date']}")
     print(f"Lens Focal       : {analysis_result['lens_focal']}")
+
     # Write output as json:
+    print(f"\nWriting output in {output_path}")
     if output_path:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(analysis_result, indent=2, ensure_ascii=False))
+    
+    # Write OK file
+    print("Writing OK file...")
+    if write_back:
+        with open(output_path.with_suffix(".ok"), "w") as ok_file:
+            ok_file.write("OK")
 
 def process_single_image(image_path: str, output_path: str = None):
+    #print ("stuff")
+    #return
     process_image_with_metadata(image_path, output_path=output_path, model="qwen3.6:latest", write_back=True)
 
 def main():
@@ -116,15 +127,31 @@ def main():
         sys.exit(1)
 
     fifo_path = sys.argv[1]
-    with open(fifo_path, "r") as fifo:
-        for line in fifo:
-            image_path = line.split()[0].strip()
-            output_path = line.split()[1].strip()
-            if not image_path or not Path(image_path).exists():
-                print(f"Skipping: {image_path} (not found)")
-                continue
+    print("Using fifo path: " + fifo_path)
 
-            process_single_image(image_path, output_path=output_path)
+    while True:
+        try:
+            with open(fifo_path, "r") as fifo:
+                print("Waiting for input...")
+                for line in fifo:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    print("Received: " + line)
+                    image_path = line.split()[0].strip()
+                    output_path = line.split()[1].strip()
+                    if not image_path or not Path(image_path).exists():
+                        print(f"Skipping: {image_path} (not found)")
+                        continue
+                    process_single_image(image_path, output_path=output_path)
+                    print("Ready for next image...")
 
+        except (KeyboardInterrupt, SystemExit):
+            print("\nExiting...")
+            break
+        except Exception as e:
+            print(f"Error: {e}. Reopening FIFO...")
+            time.sleep(1)  # Avoid busy-waiting
+    print("Done")
 if __name__ == "__main__":
     main()
