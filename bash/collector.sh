@@ -7,19 +7,11 @@ mkdir -p $LOCAL_SCRATCH_DIR/outputs
 function process_json {
     json=$1
     echo "Processing $json"
-    # First ensure process is finished
-    ssh $PROCESS_WN "ls $IMG_PROCESS_DIR/lock/$json" &> /dev/null
-    if [ $? -ne 0 ]; then
-        echo "Process not finished"
-        return
-    fi
 
     # Ensure json is not already processed
     ssh $DATA_WN "ls $IMG_SRC_DIR/metadata/$json" &> /dev/null
     if [ $? -eq 0 ]; then
         echo "Image already processed"
-        img=`echo $json | cut -d '.' -f 1`
-        ssh $PROCESS_WN "rm -f $IMG_PROCESS_DIR/inputs/$img"
         rm -f $LOCAL_SCRATCH_DIR/outputs/$json
         return
     fi
@@ -30,8 +22,7 @@ function process_json {
     # Change ownership
     ssh $DATA_WN "chown $DATA_USER:$DATA_USER $IMG_SRC_DIR/metadata/$json"
 
-    # Remove img and json from process server
-    ssh $PROCESS_WN "rm -f $IMG_PROCESS_DIR/inputs/$img"
+    # Remove json from process server
     ssh $PROCESS_WN "rm -f $IMG_PROCESS_DIR/outputs/$json"
 }
 
