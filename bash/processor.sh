@@ -40,9 +40,10 @@ function process_image {
     # Generate metadata
     echo "$IMG_PROCESS_DIR/reduced/$img $IMG_PROCESS_DIR/metadata/$img_meta_data" > "image_pipe"
 
-    okfile=$IMG_PROCESS_DIR/metadata/${img_meta_data}.ok
+    okfile=$IMG_PROCESS_DIR/metadata/${img}.ok
     # Wait for the metadata to be generated
     while [ ! -f $okfile ]; do
+        echo "Waiting for metadata to be generated"
         sleep 1
     done
 
@@ -50,6 +51,12 @@ function process_image {
     rm -f $IMG_PROCESS_DIR/reduced/$img
     rm -f $IMG_PROCESS_DIR/locks/$img_meta_data
     rm -f $okfile
+
+    # Mv metadata to outputs
+    mv $IMG_PROCESS_DIR/metadata/$img_meta_data $IMG_PROCESS_DIR/outputs/
+    rm $IMG_PROCESS_DIR/metadata/${img_meta_data}.ok
+
+    echo "Finished processing $img"
 }
 
 # First look at the input directory
