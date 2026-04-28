@@ -7,7 +7,7 @@ mkdir -p $LOCAL_SCRATCH_DIR
 rm -f $LOCAL_SCRATCH_DIR/img_list.txt
 
 # Gather image to process
-ssh $DATA_WN "cd $IMG_SRC_DIR; find stick* -type f -iname '*.jpg'" | sed -e's#^./##' > $LOCAL_SCRATCH_DIR/img_list.txt
+ssh $DATA_WN "cd $IMG_SRC_DIR; find 20* -type f -size +300k -iname '*.jpg'" | sed -e's#^./##' > $LOCAL_SCRATCH_DIR/img_list.txt
 
 ssh $DATA_WN mkdir -p $IMG_SRC_DIR/metadata
 
