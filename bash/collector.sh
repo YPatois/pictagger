@@ -24,16 +24,21 @@ function process_json {
 
     # Remove json from process server
     ssh $PROCESS_WN "rm -f $IMG_PROCESS_DIR/outputs/$json"
+
+    # Remove lock
+    rm -f $LOCAL_SCRATCH_DIR/locks/$json
 }
 
 # Periodically check for new json
+echo "Checking for new processed json..."
 while true; do
-    echo "Checking for new processed json..."
+    echo -n "."
     ssh $PROCESS_WN "ls $IMG_PROCESS_DIR/outputs" > $LOCAL_SCRATCH_DIR/outputs.txt
     # If process returns in error, maybe the directory doesn't exist yet
     if [ $? -eq 0 ]; then
         for json in `cat $LOCAL_SCRATCH_DIR/outputs.txt`; do
-            process_image $json
+            echo
+            process_json $json
         done
     else
         echo "Directory not found..."
