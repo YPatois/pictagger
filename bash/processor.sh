@@ -9,11 +9,11 @@ mkdir -p $IMG_PROCESS_DIR/outputs
 mkdir -p $IMG_PROCESS_DIR/locks
 
 # Create a named pipe to connect to python script
-rm -f image_pipe
-mkfifo image_pipe
+#rm -f image_pipe
+#mkfifo image_pipe
 
 # Start the python script
-../python/pictager.py image_pipe 2>&1 | tee $IMG_PROCESS_DIR/image_pipe.log &
+#../python/pictager.py image_pipe 2>&1 | tee $IMG_PROCESS_DIR/image_pipe.log &
 
 function process_image {
     fileok=$1
@@ -38,14 +38,18 @@ function process_image {
     convert $IMG_PROCESS_DIR/inputs/$img -resize 900x900 $IMG_PROCESS_DIR/reduced/$img
 
     # Generate metadata
+    echo "$IMG_PROCESS_DIR/reduced/$img $IMG_PROCESS_DIR/metadata/$img_meta_data"
     echo "$IMG_PROCESS_DIR/reduced/$img $IMG_PROCESS_DIR/metadata/$img_meta_data" > "image_pipe"
 
     okfile=$IMG_PROCESS_DIR/metadata/${img}.ok
     # Wait for the metadata to be generated
-    while [ ! -f $okfile ]; do
-        echo "Waiting for metadata to be generated"
+    echo "Waiting for metadata to be generated"
+    while [ ! -f "$okfile" ]; do
+        echo -n "."
         sleep 1
     done
+    echo
+    echo "Metadata generated."
 
     rm -f $IMG_PROCESS_DIR/inputs/$img
     rm -f $IMG_PROCESS_DIR/reduced/$img
@@ -54,18 +58,19 @@ function process_image {
 
     # Mv metadata to outputs
     mv $IMG_PROCESS_DIR/metadata/$img_meta_data $IMG_PROCESS_DIR/outputs/
-    rm $IMG_PROCESS_DIR/metadata/${img_meta_data}.ok
 
     echo "Finished processing $img"
 }
 
-# First look at the input directory
-for img in `ls $IMG_PROCESS_DIR/inputs`; do
-    process_image $img
-done
+function process__all_images {
+    for img in `ls $IMG_PROCESS_DIR/inputs`; do
+        process_image $img
+    done 
+}
 
+echo "Starting..."
 # Watch for new images to process using inotifywait
 inotifywait -m -e create -e moved_to $IMG_PROCESS_DIR/inputs | while read path action file; do
     echo "New image detected: $file"
-    process_image $file
+    process__all_images
 done
