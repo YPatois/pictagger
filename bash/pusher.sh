@@ -38,6 +38,9 @@ function process_image {
     ssh $PROCESS_WN "chown $PROCESS_USER:$PROCESS_USER $IMG_PROCESS_DIR/inputs/$imgfull"
     # Ensure upload is complete
     ssh $PROCESS_WN "touch $IMG_PROCESS_DIR/inputs/${imgfull}.ok"
+
+    # Erase local copy
+    rm -f $LOCAL_SCRATCH_DIR/inputs/$imgbase
 }
 
 for img in `cat $LOCAL_SCRATCH_DIR/img_list.txt`; do
