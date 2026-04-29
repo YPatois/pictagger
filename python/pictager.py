@@ -88,11 +88,14 @@ Be as descriptive as possible, but only refers well identified objects."""
     analysis_result = {}
 
     keywords = []
+    kwddict={}
     for line in response_content.split("\n"):
         if line:
             keyword = line.strip('-').strip()
             if keyword:
-                keywords.append(keyword)
+                if not (keyword in kwddict):
+                    kwddict[keyword] = 1
+                    keywords.append(keyword)
 
     analysis_result["keywords"] = keywords
     analysis_result["capture_date"] = metadata.get("capture_date") or "Not Available"
